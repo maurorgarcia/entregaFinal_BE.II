@@ -1,0 +1,35 @@
+<h1>{{title}}</h1>
+
+<form action="/products" method="GET" style="margin-bottom: 20px;">
+    <input type="number" name="limit" min="1" placeholder="Limite" value="{{limit}}">
+    <input type="text" name="query" placeholder="Categoria o disponibilidad true/false" value="{{query}}">
+    <select name="sort">
+        <option value="">Sin ordenar</option>
+        <option value="asc">Precio ascendente</option>
+        <option value="desc">Precio descendente</option>
+    </select>
+    <button type="submit">Filtrar</button>
+</form>
+
+<ul>
+    {{#each products}}
+        <li style="margin-bottom: 16px;">
+            <strong>{{this.title}}</strong> - ${{this.price}}<br>
+            Categoria: {{this.category}} | Stock: {{this.stock}}<br>
+            Codigo: {{this.code}} | ID: {{this._id}}<br>
+            <a href="/products/{{this._id}}">Ver detalle</a>
+        </li>
+    {{/each}}
+</ul>
+
+<nav style="display: flex; gap: 12px; align-items: center;">
+    {{#if pagination.hasPrevPage}}
+        <a href="{{pagination.prevLink}}">Pagina anterior</a>
+    {{/if}}
+
+    <span>Pagina {{pagination.page}} de {{pagination.totalPages}}</span>
+
+    {{#if pagination.hasNextPage}}
+        <a href="{{pagination.nextLink}}">Pagina siguiente</a>
+    {{/if}}
+</nav>

@@ -1,0 +1,46 @@
+[
+  {
+    "id": "1",
+    "title": "Laptop Gamer",
+    "description": "Laptop con 16GB RAM, RTX 4060 y SSD 1TB",
+    "code": "LAP001",
+    "price": 1500,
+    "status": true,
+    "stock": 5,
+    "category": "Tecnología",
+    "thumbnails": []
+  },
+  {
+    "id": "2",
+    "title": "Mouse Inalámbrico",
+    "description": "Mouse ergonomico con batería de larga duración",
+    "code": "MOU001",
+    "price": 45,
+    "status": true,
+    "stock": 20,
+    "category": "Accesorios",
+    "thumbnails": []
+  },
+  {
+    "id": "3",
+    "title": "Teclado Mecánico",
+    "description": "Teclado RGB con switches mecánicos",
+    "code": "TEC001",
+    "price": 120,
+    "status": true,
+    "stock": 15,
+    "category": "Accesorios",
+    "thumbnails": []
+  },
+  {
+    "id": "4",
+    "title": "Auriculares Inalámbricos",
+    "description": "Auriculares Bluetooth con cancelación de ruido",
+    "code": "B001",
+    "price": 15000,
+    "status": true,
+    "stock": 25,
+    "category": "Electrónica",
+    "thumbnails": []
+  }
+]

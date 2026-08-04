@@ -1,0 +1,23 @@
+{{#if product}}
+    <article>
+        <h1>{{product.title}}</h1>
+        <p>{{product.description}}</p>
+        <p><strong>Precio:</strong> ${{product.price}}</p>
+        <p><strong>Categoria:</strong> {{product.category}}</p>
+        <p><strong>Stock:</strong> {{product.stock}}</p>
+        <p><strong>Codigo:</strong> {{product.code}}</p>
+        <p><strong>ID:</strong> {{product._id}}</p>
+
+        <form class="add-to-cart-form" data-product-id="{{product._id}}" style="margin-top: 20px;">
+            <input type="text" name="cartId" placeholder="ID del carrito" required>
+            <button type="submit">Agregar al carrito</button>
+        </form>
+        <p class="cart-message"></p>
+    </article>
+{{else}}
+    <h1>Producto no encontrado</h1>
+{{/if}}
+
+<p><a href="/products">Volver a productos</a></p>
+
+<script src="/js/product-actions.js"></script>
