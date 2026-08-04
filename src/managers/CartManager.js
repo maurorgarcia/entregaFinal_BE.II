@@ -2,11 +2,6 @@ const mongoose = require("mongoose");
 const Cart = require("../models/Cart");
 
 class CartManager {
-  async getCarts() {
-    const carts = await Cart.find().lean();
-    return carts.map(cart => this.formatCart(cart));
-  }
-
   async getCartById(id) {
     if (!this.isValidObjectId(id)) {
       return null;

@@ -15,8 +15,10 @@ router.post("/register", (req, res, next) => {
     if (!user) {
       return res.status(400).json({ status: "error", message: info.message || "Error al registrar" });
     }
-    // Usuario creado correctamente
-    res.status(201).json({ status: "success", message: "Usuario registrado con éxito", payload: user });
+    // Usuario creado correctamente - quitamos el password del payload de respuesta
+    const userResponse = user.toObject ? user.toObject() : { ...user };
+    delete userResponse.password;
+    res.status(201).json({ status: "success", message: "Usuario registrado con éxito", payload: userResponse });
   })(req, res, next);
 });
 
