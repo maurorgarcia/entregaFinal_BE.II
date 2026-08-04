@@ -1,251 +1,148 @@
-# Entrega Final Backend
+# Entrega 1 - Backend II: CRUD de Usuarios y Autenticación JWT
 
-Proyecto backend desarrollado con Node.js, Express, MongoDB, Mongoose, Handlebars y Socket.io.
+Proyecto Backend desarrollado con **Node.js**, **Express**, **MongoDB**, **Mongoose**, **Passport.js** y **JWT**.
 
-La aplicacion permite gestionar productos y carritos, consultar productos con paginacion, filtros y ordenamiento, y visualizar productos/carritos desde vistas renderizadas con Handlebars.
+Incluye la gestión de usuarios con encriptación de contraseñas (`bcrypt`), autenticación con Passport (estrategias `register`, `login` y `jwt`), validación de sesión a través del endpoint `/api/sessions/current`, además del sistema de catálogo de productos y carritos de compra.
 
-## Tecnologias
+---
 
-- Node.js
-- Express
-- MongoDB Atlas o MongoDB local
-- Mongoose
-- Handlebars
-- Socket.io
-- Nodemon
+## Tecnologías Utilizadas
 
-## Instalacion
+- **Node.js** & **Express**
+- **MongoDB** & **Mongoose**
+- **Passport.js** (passport-local, passport-jwt)
+- **JSON Web Tokens (JWT)** & **Bcrypt**
+- **Handlebars** & **Socket.io**
+- **Cookie Parser** & **Dotenv**
 
-Clonar el repositorio e instalar dependencias:
+---
+
+## Instalación y Configuración
+
+1. Clonar el repositorio e instalar las dependencias:
 
 ```bash
 npm install
 ```
 
-El proyecto no incluye `node_modules`, por lo que siempre se deben instalar las dependencias despues de clonar.
+2. Configurar las variables de entorno en el archivo `.env`:
 
-## Configuracion de MongoDB
-
-El proyecto usa MongoDB como sistema de persistencia principal.
-
-Por defecto intenta conectarse a:
-
-```txt
-mongodb://127.0.0.1:27017/entrega_final_backend
+```env
+PORT=8080
+MONGODB_URI=mongodb://127.0.0.1:27017/entrega1_be2
+JWT_SECRET=coder_secret_2024
 ```
 
-Si se usa MongoDB Atlas, configurar la variable de entorno `MONGODB_URI`.
-
-En PowerShell:
-
-```powershell
-$env:MONGODB_URI="mongodb+srv://usuario:password@cluster.mongodb.net/entrega_final_backend?appName=Cluster0"
-```
-
-Si la conexion `mongodb+srv` da problemas de DNS, tambien se puede usar la URI completa con los hosts del cluster provista por Atlas.
-
-## Cargar Datos Iniciales
-
-Para cargar en MongoDB los productos base incluidos en `src/data/products.json`:
+3. (Opcional) Cargar productos de prueba en la base de datos:
 
 ```bash
 npm run seed
 ```
 
-El seed evita duplicar productos usando el campo `code`.
+---
 
-## Ejecucion
+## Ejecución del Servidor
 
-Modo desarrollo:
+Modo desarrollo con Nodemon:
 
 ```bash
 npm run dev
 ```
 
-Modo produccion:
+Modo producción:
 
 ```bash
 npm start
 ```
 
-Servidor:
+El servidor estará escuchando en `http://localhost:8080`.
 
-```txt
-http://localhost:8080
+---
+
+## Endpoints Principales
+
+### Autenticación y Usuarios (`/api/sessions`)
+
+| Método | Endpoint | Descripción | Requiere Auth |
+|--------|----------|-------------|---------------|
+| `POST` | `/api/sessions/register` | Registra un nuevo usuario con contraseña hasheada y le asigna un carrito propio | No |
+| `POST` | `/api/sessions/login` | Autentica al usuario y devuelve un token JWT (además de setear cookie `jwt`) | No |
+| `GET`  | `/api/sessions/current` | Valida el JWT y devuelve los datos del usuario logueado | Sí (JWT) |
+| `GET`  | `/api/sessions/logout` | Limpia la cookie JWT | No |
+
+#### Ejemplo Body `POST /api/sessions/register`
+```json
+{
+  "first_name": "Juan",
+  "last_name": "Pérez",
+  "email": "juan@example.com",
+  "age": 28,
+  "password": "miPasswordSegura123"
+}
 ```
 
-## Vistas
-
-| Metodo | Ruta | Descripcion |
-|--------|------|-------------|
-| GET | `/products` | Lista productos con paginacion, filtros y ordenamiento |
-| GET | `/products/:pid` | Muestra el detalle de un producto y permite agregarlo a un carrito |
-| GET | `/carts/:cid` | Muestra los productos de un carrito especifico |
-| GET | `/realtimeproducts` | Vista con Socket.io para agregar y eliminar productos en tiempo real |
-
-Ejemplos:
-
-```txt
-http://localhost:8080/products
-http://localhost:8080/products?limit=2&page=1&sort=asc
-http://localhost:8080/products?query=Accesorios
+#### Ejemplo Body `POST /api/sessions/login`
+```json
+{
+  "email": "juan@example.com",
+  "password": "miPasswordSegura123"
+}
 ```
 
-## API Productos
+#### Uso de `/api/sessions/current`
+Enviar el header de autorización en la petición HTTP:
+`Authorization: Bearer <TOKEN_JWT>` (o utilizar la cookie `jwt`).
 
-| Metodo | Endpoint | Descripcion |
+---
+
+### Productos (`/api/products`)
+
+| Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET | `/api/products` | Obtiene productos con paginacion, filtros y ordenamiento |
-| GET | `/api/products/:pid` | Obtiene un producto por id |
-| POST | `/api/products` | Crea un producto |
-| PUT | `/api/products/:pid` | Actualiza un producto |
-| DELETE | `/api/products/:pid` | Elimina un producto |
+| `GET`  | `/api/products` | Lista de productos con paginación, filtros y ordenamiento |
+| `GET`  | `/api/products/:pid` | Detalle de un producto por ID |
+| `POST` | `/api/products` | Crear nuevo producto |
+| `PUT`  | `/api/products/:pid` | Actualizar producto |
+| `DELETE` | `/api/products/:pid` | Eliminar producto |
 
-### Query Params de `GET /api/products`
+---
 
-| Parametro | Descripcion | Default |
-|-----------|-------------|---------|
-| `limit` | Cantidad de productos por pagina | `10` |
-| `page` | Pagina solicitada | `1` |
-| `query` | Categoria o disponibilidad (`true` / `false`) | Sin filtro |
-| `sort` | Orden por precio: `asc` o `desc` | Sin orden |
+### Carritos (`/api/carts`)
 
-Ejemplos:
-
-```txt
-GET /api/products
-GET /api/products?limit=2&page=1
-GET /api/products?query=Accesorios
-GET /api/products?query=true
-GET /api/products?limit=2&page=1&sort=desc
-```
-
-Formato de respuesta:
-
-```json
-{
-  "status": "success",
-  "payload": [],
-  "totalPages": 1,
-  "prevPage": null,
-  "nextPage": null,
-  "page": 1,
-  "hasPrevPage": false,
-  "hasNextPage": false,
-  "prevLink": null,
-  "nextLink": null
-}
-```
-
-Ejemplo para crear producto:
-
-```json
-{
-  "title": "Monitor 24 pulgadas",
-  "description": "Monitor Full HD",
-  "code": "MON001",
-  "price": 250,
-  "stock": 8,
-  "category": "Tecnologia",
-  "thumbnails": []
-}
-```
-
-## API Carritos
-
-| Metodo | Endpoint | Descripcion |
+| Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| POST | `/api/carts` | Crea un carrito |
-| GET | `/api/carts/:cid` | Obtiene un carrito con productos populados |
-| POST | `/api/carts/:cid/products/:pid` | Agrega un producto al carrito |
-| DELETE | `/api/carts/:cid/products/:pid` | Elimina un producto especifico del carrito |
-| PUT | `/api/carts/:cid` | Reemplaza todos los productos del carrito |
-| PUT | `/api/carts/:cid/products/:pid` | Actualiza solo la cantidad de un producto |
-| DELETE | `/api/carts/:cid` | Elimina todos los productos del carrito |
+| `POST` | `/api/carts` | Crea un carrito vacío |
+| `GET`  | `/api/carts/:cid` | Obtiene un carrito con productos populados |
+| `POST` | `/api/carts/:cid/products/:pid` | Agrega un producto al carrito |
+| `DELETE` | `/api/carts/:cid/products/:pid` | Elimina un producto del carrito |
+| `PUT`  | `/api/carts/:cid` | Actualiza la lista completa de productos del carrito |
+| `PUT`  | `/api/carts/:cid/products/:pid` | Actualiza la cantidad de un producto específico |
+| `DELETE` | `/api/carts/:cid` | Vacía el carrito |
 
-El modelo de carrito guarda solamente el id del producto, pero `GET /api/carts/:cid` utiliza `populate` para devolver los datos completos del producto.
+---
 
-### Reemplazar Productos del Carrito
-
-```json
-[
-  {
-    "product": "id-del-producto",
-    "quantity": 2
-  },
-  {
-    "product": "id-de-otro-producto",
-    "quantity": 1
-  }
-]
-```
-
-### Actualizar Cantidad
-
-```json
-{
-  "quantity": 4
-}
-```
-
-## Pruebas Rapidas
-
-Crear carrito:
-
-```powershell
-Invoke-RestMethod -Method Post "http://localhost:8080/api/carts"
-```
-
-Consultar productos:
-
-```powershell
-Invoke-RestMethod "http://localhost:8080/api/products?limit=2&page=1&sort=asc"
-```
-
-Agregar producto a carrito:
-
-```powershell
-Invoke-RestMethod -Method Post "http://localhost:8080/api/carts/CART_ID/products/PRODUCT_ID"
-```
-
-Actualizar cantidad:
-
-```powershell
-Invoke-RestMethod -Method Put "http://localhost:8080/api/carts/CART_ID/products/PRODUCT_ID" -ContentType "application/json" -Body '{"quantity":3}'
-```
-
-Vaciar carrito:
-
-```powershell
-Invoke-RestMethod -Method Delete "http://localhost:8080/api/carts/CART_ID"
-```
-
-## Estructura Principal
+## Estructura del Proyecto
 
 ```txt
 src/
-  config/
-    db.js
-  managers/
-    CartManager.js
-    ProductManager.js
-  models/
-    Cart.js
-    Product.js
-  public/
-    js/
-      product-actions.js
-      realtime.js
-  routes/
-    carts.router.js
-    products.router.js
-    views.router.js
-  views/
-    cartDetail.handlebars
-    index.handlebars
-    productDetail.handlebars
-    realTimeProducts.handlebars
-  app.js
-scripts/
-  seedProducts.js
+├── config/
+│   ├── db.js
+│   └── passport.config.js
+├── managers/
+│   ├── CartManager.js
+│   ├── ProductManager.js
+│   └── UserManager.js
+├── middleware/
+│   └── auth.middleware.js
+├── models/
+│   ├── Cart.js
+│   ├── Product.js
+│   └── User.js
+├── routes/
+│   ├── carts.router.js
+│   ├── products.router.js
+│   ├── sessions.router.js
+│   └── views.router.js
+├── views/
+└── app.js
 ```
