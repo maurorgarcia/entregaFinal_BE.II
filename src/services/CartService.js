@@ -95,13 +95,11 @@ class CartService {
     for (const item of cart.products) {
       const product = item.product;
 
-      // Producto eliminado del catalogo: no se puede comprar
       if (!product || typeof product !== "object") {
         notPurchased.push({ product: item.product, quantity: item.quantity });
         continue;
       }
 
-      // Descuento atomico: solo se aplica si el stock alcanza
       const updated = await this.products.reserveStock(product._id, item.quantity);
       if (updated) {
         purchased.push({ product: product._id, title: product.title, price: product.price, quantity: item.quantity });

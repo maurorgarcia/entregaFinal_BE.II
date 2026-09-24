@@ -1,6 +1,5 @@
 const passport = require("passport");
 
-// Valida el JWT con la estrategia indicada (por defecto "current") y deja el usuario en req.user
 const authenticate = (strategy = "current") => {
   return (req, res, next) => {
     passport.authenticate(strategy, { session: false }, (err, user, info) => {
@@ -17,7 +16,6 @@ const authenticate = (strategy = "current") => {
   };
 };
 
-// Restringe el acceso a los roles indicados (debe usarse despues de authenticate)
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
@@ -27,7 +25,6 @@ const authorize = (...roles) => {
   };
 };
 
-// El usuario solo puede operar sobre su propio carrito (req.params.cid)
 const ownsCart = (req, res, next) => {
   const userCart = req.user.cart && (req.user.cart._id || req.user.cart);
   if (!userCart || String(userCart) !== String(req.params.cid)) {

@@ -20,7 +20,6 @@ class CartRepository {
     return cart ? this.format(cart) : null;
   }
 
-  // products: [{ product: <id>, quantity }]
   async setProducts(id, products, options) {
     if (!this.isValidId(id)) return null;
     const cart = await this.dao.setProducts(id, products, options);

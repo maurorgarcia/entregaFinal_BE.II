@@ -26,7 +26,6 @@ class UserService {
     });
   }
 
-  // Devuelve { user } si las credenciales son correctas o { message } si no
   async validateCredentials(email, password) {
     const user = await this.users.getUserByEmail(email, { withPassword: true });
     if (!user) return { message: "Usuario no encontrado" };

@@ -42,7 +42,6 @@ router.get("/:pid", async (req, res) => {
   }
 });
 
-// Crear, actualizar y eliminar productos: solo administradores
 router.post("/", authenticate("current"), authorize("admin"), async (req, res) => {
   try {
     const newProduct = await productService.addProduct(req.body);

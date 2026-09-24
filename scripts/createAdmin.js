@@ -3,7 +3,6 @@ const config = require("../src/config/config");
 const User = require("../src/models/User");
 const { userService } = require("../src/services");
 
-// Crea (o promueve) el usuario administrador definido en ADMIN_EMAIL / ADMIN_PASSWORD
 async function createAdmin() {
   await mongoose.connect(config.mongoUri, { serverSelectionTimeoutMS: 5000 });
 

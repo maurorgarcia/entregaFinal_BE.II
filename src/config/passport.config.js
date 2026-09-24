@@ -54,7 +54,6 @@ const initializePassport = () => {
     )
   );
 
-  // Estrategia "current": valida el JWT y trae al usuario actual desde la base
   passport.use(
     "current",
     new JWTStrategy(

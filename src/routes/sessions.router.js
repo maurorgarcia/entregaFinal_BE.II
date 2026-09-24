@@ -52,7 +52,6 @@ router.post("/login", (req, res, next) => {
   })(req, res, next);
 });
 
-// CURRENT: devuelve un DTO con los datos no sensibles del usuario logueado
 router.get("/current", authenticate("current"), (req, res) => {
   res.json({
     status: "success",
@@ -60,7 +59,6 @@ router.get("/current", authenticate("current"), (req, res) => {
   });
 });
 
-// RECUPERACION DE CONTRASEÑA: envia un mail con un enlace que expira en 1 hora
 router.post("/forgot-password", async (req, res) => {
   try {
     await passwordService.requestReset(req.body.email);

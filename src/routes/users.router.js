@@ -52,7 +52,7 @@ router.put("/:id", authenticate("current"), validateId, async (req, res) => {
     if (last_name !== undefined) updateData.last_name = last_name;
     if (email !== undefined) updateData.email = email;
     if (age !== undefined) updateData.age = age;
-    if (password) updateData.password = password; // el service se encarga de hashearlo
+    if (password) updateData.password = password;
     // Solo un admin puede cambiar roles
     if (role !== undefined) {
       if (req.user.role !== "admin") {

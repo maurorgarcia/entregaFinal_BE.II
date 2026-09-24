@@ -1,4 +1,3 @@
-// Error de negocio con codigo HTTP asociado; los routers lo traducen a la respuesta
 class HttpError extends Error {
   constructor(status, message) {
     super(message);

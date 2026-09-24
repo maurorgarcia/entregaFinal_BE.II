@@ -45,7 +45,6 @@ router.get('/products/:pid', async (req, res) => {
   });
 });
 
-// El carrito solo lo ve su dueño (o un admin), identificado por la cookie JWT
 router.get('/carts/:cid', authenticate('current'), async (req, res) => {
   const { cid } = req.params;
   const userCart = req.user.cart && String(req.user.cart._id || req.user.cart);
@@ -58,7 +57,6 @@ router.get('/carts/:cid', authenticate('current'), async (req, res) => {
   try {
     cart = await cartService.getCart(cid);
   } catch (error) {
-    // se muestra como carrito no encontrado
   }
 
   if (!cart) {

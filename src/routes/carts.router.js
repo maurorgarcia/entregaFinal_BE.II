@@ -18,7 +18,6 @@ router.post("/", authenticate("current"), async (req, res) => {
   }
 });
 
-// Ver un carrito: su dueño o un admin
 router.get("/:cid", authenticate("current"), async (req, res) => {
   try {
     const { cid } = req.params;
@@ -83,7 +82,6 @@ router.delete("/:cid", userOwnsCart, async (req, res) => {
   }
 });
 
-// Finalizar compra: genera el ticket con los productos que tienen stock
 router.post("/:cid/purchase", userOwnsCart, async (req, res) => {
   try {
     const { ticket, notPurchased } = await cartService.purchase(req.params.cid, req.user.email);

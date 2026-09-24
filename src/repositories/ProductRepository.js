@@ -43,7 +43,6 @@ class ProductRepository {
     return (await this.dao.delete(id)) ? true : null;
   }
 
-  // Devuelve el producto actualizado o null si no habia stock suficiente
   async reserveStock(id, quantity) {
     const product = await this.dao.decrementStock(id, quantity);
     return product ? this.format(product) : null;
