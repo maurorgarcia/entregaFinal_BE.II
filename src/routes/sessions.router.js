@@ -33,7 +33,7 @@ router.post("/login", (req, res, next) => {
     }
 
     // Generar Token JWT
-    const token = jwt.sign(user, JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ _id: user._id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "1h" });
 
     // Se puede enviar en una cookie y en el body
     res.cookie("jwt", token, {

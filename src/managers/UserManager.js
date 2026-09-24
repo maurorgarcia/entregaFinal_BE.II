@@ -21,6 +21,14 @@ class UserManager {
     }
   }
 
+  async getUsers() {
+    try {
+      return await User.find().populate("cart");
+    } catch (error) {
+      throw new Error(`Error al obtener usuarios: ${error.message}`);
+    }
+  }
+
   async getUserById(id) {
     try {
       const user = await User.findById(id).populate("cart");
@@ -32,7 +40,7 @@ class UserManager {
 
   async updateUser(id, updateData) {
     try {
-      const updatedUser = await User.findByIdAndUpdate(id, updateData, { new: true });
+      const updatedUser = await User.findByIdAndUpdate(id, updateData, { returnDocument: "after", runValidators: true });
       return updatedUser;
     } catch (error) {
       throw new Error(`Error al actualizar usuario: ${error.message}`);

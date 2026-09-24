@@ -70,6 +70,25 @@ El servidor estará escuchando en `http://localhost:8080`.
 | `GET`  | `/api/sessions/current` | Valida el JWT y devuelve los datos del usuario logueado | Sí (JWT) |
 | `GET`  | `/api/sessions/logout` | Limpia la cookie JWT | No |
 
+### CRUD de Usuarios (`/api/users`)
+
+| Método | Endpoint | Descripción | Permisos |
+|--------|----------|-------------|----------|
+| `GET` | `/api/users` | Lista todos los usuarios | Admin |
+| `GET` | `/api/users/:id` | Obtiene un usuario | El propio usuario o admin |
+| `PUT` | `/api/users/:id` | Actualiza un usuario (re-hashea el password; solo admin puede cambiar `role`) | El propio usuario o admin |
+| `DELETE` | `/api/users/:id` | Elimina un usuario | El propio usuario o admin |
+
+La estrategia JWT consulta la base de datos en cada request: si el usuario del token fue eliminado, se devuelve `401`.
+
+### Tests
+
+```bash
+npm test
+```
+
+Usa Jest + Supertest con MongoDB en memoria (no requiere una base local).
+
 #### Ejemplo Body `POST /api/sessions/register`
 ```json
 {

@@ -16,6 +16,17 @@ const authenticate = (strategy) => {
   };
 };
 
+// Restringe el acceso a los roles indicados (debe usarse despues de authenticate)
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ status: "error", message: "No tenes permisos para realizar esta accion" });
+    }
+    next();
+  };
+};
+
 module.exports = {
-  authenticate
+  authenticate,
+  authorize
 };

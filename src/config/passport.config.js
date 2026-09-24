@@ -97,7 +97,12 @@ const initializePassport = () => {
       },
       async (jwt_payload, done) => {
         try {
-          return done(null, jwt_payload);
+          // Verificamos que el usuario del token siga existiendo en la base de datos
+          const user = await userManager.getUserById(jwt_payload._id);
+          if (!user) {
+            return done(null, false, { message: "El usuario del token ya no existe" });
+          }
+          return done(null, user.toObject());
         } catch (error) {
           return done(error);
         }

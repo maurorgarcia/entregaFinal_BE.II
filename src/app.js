@@ -13,6 +13,7 @@ const productsRouter = require('./routes/products.router');
 const cartsRouter = require('./routes/carts.router');
 const viewsRouter = require('./routes/views.router');
 const sessionsRouter = require('./routes/sessions.router');
+const usersRouter = require('./routes/users.router');
 const ProductManager = require('./managers/ProductManager');
 
 const app = express();
@@ -40,6 +41,7 @@ app.use("/", viewsRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/carts", cartsRouter);
 app.use("/api/sessions", sessionsRouter);
+app.use("/api/users", usersRouter);
 
 io.on('connection', async (socket) => {
   console.log('Nuevo cliente conectado');
@@ -74,8 +76,13 @@ io.on('connection', async (socket) => {
   });
 });
 
-connectDB().then(() => {
-  httpServer.listen(port, () => {
-    console.log(`Servidor escuchando en el puerto ${port}`);
+// Solo levantamos el servidor si se ejecuta directamente (permite importar app en los tests)
+if (require.main === module) {
+  connectDB().then(() => {
+    httpServer.listen(port, () => {
+      console.log(`Servidor escuchando en el puerto ${port}`);
+    });
   });
-});
+}
+
+module.exports = app;
