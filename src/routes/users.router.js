@@ -1,11 +1,9 @@
 const express = require("express");
-const bcrypt = require("bcrypt");
 const mongoose = require("mongoose");
-const UserManager = require("../managers/UserManager");
+const { userService } = require("../services");
 const { authenticate, authorize } = require("../middleware/auth.middleware");
 
 const router = express.Router();
-const userManager = new UserManager();
 
 const isOwnerOrAdmin = (req, id) =>
   req.user.role === "admin" || String(req.user._id) === String(id);
@@ -18,9 +16,9 @@ const validateId = (req, res, next) => {
 };
 
 // GET todos los usuarios (solo admin)
-router.get("/", authenticate("jwt"), authorize("admin"), async (req, res) => {
+router.get("/", authenticate("current"), authorize("admin"), async (req, res) => {
   try {
-    const users = await userManager.getUsers();
+    const users = await userService.getUsers();
     res.json({ status: "success", payload: users });
   } catch (error) {
     res.status(500).json({ status: "error", message: error.message });
@@ -28,12 +26,12 @@ router.get("/", authenticate("jwt"), authorize("admin"), async (req, res) => {
 });
 
 // GET un usuario (el propio usuario o admin)
-router.get("/:id", authenticate("jwt"), validateId, async (req, res) => {
+router.get("/:id", authenticate("current"), validateId, async (req, res) => {
   try {
     if (!isOwnerOrAdmin(req, req.params.id)) {
       return res.status(403).json({ status: "error", message: "No tenes permisos para ver este usuario" });
     }
-    const user = await userManager.getUserById(req.params.id);
+    const user = await userService.getUserById(req.params.id);
     if (!user) return res.status(404).json({ status: "error", message: "Usuario no encontrado" });
     res.json({ status: "success", payload: user });
   } catch (error) {
@@ -42,7 +40,7 @@ router.get("/:id", authenticate("jwt"), validateId, async (req, res) => {
 });
 
 // PUT actualizar usuario (el propio usuario o admin)
-router.put("/:id", authenticate("jwt"), validateId, async (req, res) => {
+router.put("/:id", authenticate("current"), validateId, async (req, res) => {
   try {
     if (!isOwnerOrAdmin(req, req.params.id)) {
       return res.status(403).json({ status: "error", message: "No tenes permisos para modificar este usuario" });
@@ -54,7 +52,7 @@ router.put("/:id", authenticate("jwt"), validateId, async (req, res) => {
     if (last_name !== undefined) updateData.last_name = last_name;
     if (email !== undefined) updateData.email = email;
     if (age !== undefined) updateData.age = age;
-    if (password) updateData.password = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
+    if (password) updateData.password = password; // el service se encarga de hashearlo
     // Solo un admin puede cambiar roles
     if (role !== undefined) {
       if (req.user.role !== "admin") {
@@ -63,7 +61,7 @@ router.put("/:id", authenticate("jwt"), validateId, async (req, res) => {
       updateData.role = role;
     }
 
-    const updated = await userManager.updateUser(req.params.id, updateData);
+    const updated = await userService.updateUser(req.params.id, updateData);
     if (!updated) return res.status(404).json({ status: "error", message: "Usuario no encontrado" });
     res.json({ status: "success", payload: updated });
   } catch (error) {
@@ -72,12 +70,12 @@ router.put("/:id", authenticate("jwt"), validateId, async (req, res) => {
 });
 
 // DELETE eliminar usuario (el propio usuario o admin)
-router.delete("/:id", authenticate("jwt"), validateId, async (req, res) => {
+router.delete("/:id", authenticate("current"), validateId, async (req, res) => {
   try {
     if (!isOwnerOrAdmin(req, req.params.id)) {
       return res.status(403).json({ status: "error", message: "No tenes permisos para eliminar este usuario" });
     }
-    const deleted = await userManager.deleteUser(req.params.id);
+    const deleted = await userService.deleteUser(req.params.id);
     if (!deleted) return res.status(404).json({ status: "error", message: "Usuario no encontrado" });
     res.json({ status: "success", message: "Usuario eliminado" });
   } catch (error) {

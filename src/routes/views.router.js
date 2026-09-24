@@ -1,10 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const ProductManager = require('../managers/ProductManager');
-const CartManager = require('../managers/CartManager');
-
-const productManager = new ProductManager();
-const cartManager = new CartManager();
+const { productService, cartService } = require('../services');
+const { authenticate } = require('../middleware/auth.middleware');
 
 router.get('/', async (req, res) => {
   res.redirect('/products');
@@ -12,7 +9,7 @@ router.get('/', async (req, res) => {
 
 router.get('/products', async (req, res) => {
   const { limit, page, sort, query } = req.query;
-  const result = await productManager.getProducts({
+  const result = await productService.getProducts({
     limit,
     page,
     sort,
@@ -33,7 +30,7 @@ router.get('/products', async (req, res) => {
 
 router.get('/products/:pid', async (req, res) => {
   const { pid } = req.params;
-  const product = await productManager.getProductById(pid);
+  const product = await productService.getProductById(pid);
 
   if (!product) {
     return res.status(404).render('productDetail', {
@@ -48,9 +45,21 @@ router.get('/products/:pid', async (req, res) => {
   });
 });
 
-router.get('/carts/:cid', async (req, res) => {
+// El carrito solo lo ve su dueño (o un admin), identificado por la cookie JWT
+router.get('/carts/:cid', authenticate('current'), async (req, res) => {
   const { cid } = req.params;
-  const cart = await cartManager.getCartByIdPopulated(cid);
+  const userCart = req.user.cart && String(req.user.cart._id || req.user.cart);
+
+  if (req.user.role !== 'admin' && userCart !== cid) {
+    return res.status(403).render('cartDetail', { title: 'Sin permisos', cart: null });
+  }
+
+  let cart = null;
+  try {
+    cart = await cartService.getCart(cid);
+  } catch (error) {
+    // se muestra como carrito no encontrado
+  }
 
   if (!cart) {
     return res.status(404).render('cartDetail', {
@@ -67,6 +76,14 @@ router.get('/carts/:cid', async (req, res) => {
 
 router.get('/realtimeproducts', (req, res) => {
   res.render('realTimeProducts', { title: 'Productos en Tiempo Real' });
+});
+
+router.get('/forgot-password', (req, res) => {
+  res.render('forgotPassword', { title: 'Recuperar contraseña' });
+});
+
+router.get('/reset-password', (req, res) => {
+  res.render('resetPassword', { title: 'Restablecer contraseña', token: req.query.token });
 });
 
 module.exports = router;

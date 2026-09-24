@@ -1,7 +1,8 @@
 const passport = require("passport");
 
-const authenticate = (strategy) => {
-  return async (req, res, next) => {
+// Valida el JWT con la estrategia indicada (por defecto "current") y deja el usuario en req.user
+const authenticate = (strategy = "current") => {
+  return (req, res, next) => {
     passport.authenticate(strategy, { session: false }, (err, user, info) => {
       if (err) return next(err);
       if (!user) {
@@ -26,7 +27,17 @@ const authorize = (...roles) => {
   };
 };
 
+// El usuario solo puede operar sobre su propio carrito (req.params.cid)
+const ownsCart = (req, res, next) => {
+  const userCart = req.user.cart && (req.user.cart._id || req.user.cart);
+  if (!userCart || String(userCart) !== String(req.params.cid)) {
+    return res.status(403).json({ status: "error", message: "Solo podes operar sobre tu propio carrito" });
+  }
+  next();
+};
+
 module.exports = {
   authenticate,
-  authorize
+  authorize,
+  ownsCart
 };

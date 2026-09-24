@@ -1,10 +1,13 @@
 const express = require("express");
 const passport = require("passport");
 const jwt = require("jsonwebtoken");
+const config = require("../config/config");
+const UserDTO = require("../dto/UserDTO");
 const { authenticate } = require("../middleware/auth.middleware");
+const { passwordService } = require("../services");
+const { sendError } = require("../utils/errors");
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || "coder_secret_2024";
 
 // REGISTER
 router.post("/register", (req, res, next) => {
@@ -13,7 +16,7 @@ router.post("/register", (req, res, next) => {
       return res.status(500).json({ status: "error", message: "Error interno del servidor" });
     }
     if (!user) {
-      return res.status(400).json({ status: "error", message: info.message || "Error al registrar" });
+      return res.status(400).json({ status: "error", message: (info && info.message) || "Error al registrar" });
     }
     // Usuario creado correctamente - quitamos el password del payload de respuesta
     const userResponse = user.toObject ? user.toObject() : { ...user };
@@ -29,11 +32,11 @@ router.post("/login", (req, res, next) => {
       return res.status(500).json({ status: "error", message: "Error interno del servidor" });
     }
     if (!user) {
-      return res.status(401).json({ status: "error", message: info.message || "Credenciales inválidas" });
+      return res.status(401).json({ status: "error", message: (info && info.message) || "Credenciales inválidas" });
     }
 
     // Generar Token JWT
-    const token = jwt.sign({ _id: user._id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ _id: user._id, email: user.email, role: user.role }, config.jwtSecret, { expiresIn: "1h" });
 
     // Se puede enviar en una cookie y en el body
     res.cookie("jwt", token, {
@@ -49,13 +52,36 @@ router.post("/login", (req, res, next) => {
   })(req, res, next);
 });
 
-// CURRENT (Devuelve el usuario logueado según el JWT)
-router.get("/current", authenticate("jwt"), (req, res) => {
-  // authenticate("jwt") ya validó el token y puso el payload en req.user
+// CURRENT: devuelve un DTO con los datos no sensibles del usuario logueado
+router.get("/current", authenticate("current"), (req, res) => {
   res.json({
     status: "success",
-    payload: req.user
+    payload: new UserDTO(req.user)
   });
+});
+
+// RECUPERACION DE CONTRASEÑA: envia un mail con un enlace que expira en 1 hora
+router.post("/forgot-password", async (req, res) => {
+  try {
+    await passwordService.requestReset(req.body.email);
+    // Respuesta identica exista o no el email, para no filtrar que cuentas estan registradas
+    res.json({
+      status: "success",
+      message: "Si el email esta registrado, te enviamos un correo para restablecer la contraseña"
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    await passwordService.resetPassword(token, password);
+    res.json({ status: "success", message: "Contraseña actualizada correctamente" });
+  } catch (error) {
+    sendError(res, error);
+  }
 });
 
 // LOGOUT

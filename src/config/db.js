@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const mongoUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/entregafinal_be2";
+const { mongoUri } = require("./config");
 
 async function connectDB() {
   try {

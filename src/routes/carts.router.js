@@ -1,191 +1,107 @@
 const express = require("express");
-const CartManager = require("../managers/CartManager");
-const ProductManager = require("../managers/ProductManager");
+const { cartService } = require("../services");
+const mailService = require("../services/MailService");
+const { authenticate, authorize, ownsCart } = require("../middleware/auth.middleware");
+const { sendError } = require("../utils/errors");
 
 const router = express.Router();
 
-const cartManager = new CartManager();
-const productManager = new ProductManager();
+// Solo el usuario (no el admin) opera sobre su propio carrito
+const userOwnsCart = [authenticate("current"), authorize("user"), ownsCart];
 
-router.post("/", async (req, res) => {
+router.post("/", authenticate("current"), async (req, res) => {
   try {
-    const newCart = await cartManager.createCart();
-
-    res.status(201).json({
-      status: "success",
-      message: "Carrito creado correctamente",
-      payload: newCart
-    });
+    const newCart = await cartService.createCart();
+    res.status(201).json({ status: "success", message: "Carrito creado correctamente", payload: newCart });
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: "Error al crear el carrito"
-    });
+    sendError(res, error);
   }
 });
 
-router.get("/:cid", async (req, res) => {
+// Ver un carrito: su dueño o un admin
+router.get("/:cid", authenticate("current"), async (req, res) => {
   try {
     const { cid } = req.params;
-
-    const cart = await cartManager.getCartByIdPopulated(cid);
-
-    if (!cart) {
-      return res.status(404).json({
-        status: "error",
-        message: "Carrito no encontrado"
-      });
+    const userCart = req.user.cart && String(req.user.cart._id || req.user.cart);
+    if (req.user.role !== "admin" && userCart !== cid) {
+      return res.status(403).json({ status: "error", message: "Solo podes ver tu propio carrito" });
     }
 
-    res.json({
-      status: "success",
-      payload: cart.products
-    });
+    const cart = await cartService.getCart(cid);
+    res.json({ status: "success", payload: cart.products });
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: "Error al obtener el carrito"
-    });
+    sendError(res, error);
   }
 });
 
 async function addProductToCart(req, res) {
   try {
     const { cid, pid } = req.params;
-
-    const product = await productManager.getProductById(pid);
-
-    if (!product) {
-      return res.status(404).json({
-        status: "error",
-        message: "Producto no encontrado"
-      });
-    }
-
-    const updatedCart = await cartManager.addProductToCart(cid, pid);
-
-    if (!updatedCart) {
-      return res.status(404).json({
-        status: "error",
-        message: "Carrito no encontrado"
-      });
-    }
-
-    res.json({
-      status: "success",
-      message: "Producto agregado al carrito correctamente",
-      payload: updatedCart
-    });
+    const updatedCart = await cartService.addProduct(cid, pid);
+    res.json({ status: "success", message: "Producto agregado al carrito correctamente", payload: updatedCart });
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: "Error al agregar el producto al carrito"
-    });
+    sendError(res, error);
   }
 }
 
-router.post("/:cid/product/:pid", addProductToCart);
-router.post("/:cid/products/:pid", addProductToCart);
+router.post("/:cid/product/:pid", userOwnsCart, addProductToCart);
+router.post("/:cid/products/:pid", userOwnsCart, addProductToCart);
 
-router.delete("/:cid/products/:pid", async (req, res) => {
+router.delete("/:cid/products/:pid", userOwnsCart, async (req, res) => {
   try {
-    const { cid, pid } = req.params;
-    const updatedCart = await cartManager.deleteProductFromCart(cid, pid);
-
-    if (!updatedCart) {
-      return res.status(404).json({
-        status: "error",
-        message: "Carrito no encontrado"
-      });
-    }
-
-    res.json({
-      status: "success",
-      message: "Producto eliminado del carrito correctamente",
-      payload: updatedCart
-    });
+    const updatedCart = await cartService.removeProduct(req.params.cid, req.params.pid);
+    res.json({ status: "success", message: "Producto eliminado del carrito correctamente", payload: updatedCart });
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: "Error al eliminar el producto del carrito"
-    });
+    sendError(res, error);
   }
 });
 
-router.put("/:cid", async (req, res) => {
+router.put("/:cid", userOwnsCart, async (req, res) => {
   try {
-    const { cid } = req.params;
-    const updatedCart = await cartManager.updateCartProducts(cid, req.body);
-
-    if (!updatedCart) {
-      return res.status(404).json({
-        status: "error",
-        message: "Carrito no encontrado"
-      });
-    }
-
-    res.json({
-      status: "success",
-      message: "Carrito actualizado correctamente",
-      payload: updatedCart
-    });
+    const updatedCart = await cartService.replaceProducts(req.params.cid, req.body);
+    res.json({ status: "success", message: "Carrito actualizado correctamente", payload: updatedCart });
   } catch (error) {
-    res.status(400).json({
-      status: "error",
-      message: error.message
-    });
+    sendError(res, error);
   }
 });
 
-router.put("/:cid/products/:pid", async (req, res) => {
+router.put("/:cid/products/:pid", userOwnsCart, async (req, res) => {
   try {
-    const { cid, pid } = req.params;
-    const { quantity } = req.body;
-
-    const updatedCart = await cartManager.updateProductQuantity(cid, pid, quantity);
-
-    if (!updatedCart) {
-      return res.status(404).json({
-        status: "error",
-        message: "Carrito o producto no encontrado"
-      });
-    }
-
-    res.json({
-      status: "success",
-      message: "Cantidad actualizada correctamente",
-      payload: updatedCart
-    });
+    const updatedCart = await cartService.updateQuantity(req.params.cid, req.params.pid, req.body.quantity);
+    res.json({ status: "success", message: "Cantidad actualizada correctamente", payload: updatedCart });
   } catch (error) {
-    res.status(400).json({
-      status: "error",
-      message: error.message
-    });
+    sendError(res, error);
   }
 });
 
-router.delete("/:cid", async (req, res) => {
+router.delete("/:cid", userOwnsCart, async (req, res) => {
   try {
-    const { cid } = req.params;
-    const updatedCart = await cartManager.clearCart(cid);
+    const updatedCart = await cartService.clearCart(req.params.cid);
+    res.json({ status: "success", message: "Productos eliminados del carrito correctamente", payload: updatedCart });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
 
-    if (!updatedCart) {
-      return res.status(404).json({
-        status: "error",
-        message: "Carrito no encontrado"
-      });
-    }
+// Finalizar compra: genera el ticket con los productos que tienen stock
+router.post("/:cid/purchase", userOwnsCart, async (req, res) => {
+  try {
+    const { ticket, notPurchased } = await cartService.purchase(req.params.cid, req.user.email);
+
+    // El mail de confirmacion no debe romper una compra ya realizada
+    mailService.sendPurchaseTicket(req.user.email, ticket).catch(error =>
+      console.error("No se pudo enviar el mail del ticket:", error.message)
+    );
 
     res.json({
       status: "success",
-      message: "Productos eliminados del carrito correctamente",
-      payload: updatedCart
+      message: notPurchased.length
+        ? "Compra parcial: algunos productos no tenian stock suficiente y siguen en tu carrito"
+        : "Compra realizada con exito",
+      payload: { ticket, notPurchased }
     });
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: "Error al vaciar el carrito"
-    });
+    sendError(res, error);
   }
 });
 

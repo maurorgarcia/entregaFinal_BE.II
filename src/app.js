@@ -1,5 +1,6 @@
-require('dotenv').config();
+const config = require('./config/config');
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const exphbs = require('express-handlebars');
@@ -14,13 +15,12 @@ const cartsRouter = require('./routes/carts.router');
 const viewsRouter = require('./routes/views.router');
 const sessionsRouter = require('./routes/sessions.router');
 const usersRouter = require('./routes/users.router');
-const ProductManager = require('./managers/ProductManager');
+const { productService, userService } = require('./services');
 
 const app = express();
-const port = 8080;
+const port = config.port;
 const httpServer = createServer(app);
 const io = new Server(httpServer);
-const productManager = new ProductManager();
 
 // Guardamos 'io' en 'app' para poder usarlo desde los routers
 app.set('socketio', io);
@@ -43,20 +43,48 @@ app.use("/api/carts", cartsRouter);
 app.use("/api/sessions", sessionsRouter);
 app.use("/api/users", usersRouter);
 
+// Autenticacion del socket con la misma cookie JWT: solo un admin puede crear o eliminar productos
+const readCookie = (header = '', name) => {
+  const match = header.split(';').map(c => c.trim()).find(c => c.startsWith(name + '='));
+  return match ? decodeURIComponent(match.slice(name.length + 1)) : null;
+};
+
+io.use(async (socket, next) => {
+  try {
+    const token = readCookie(socket.handshake.headers.cookie, 'jwt');
+    if (token) {
+      const payload = jwt.verify(token, config.jwtSecret);
+      socket.user = await userService.getUserById(payload._id);
+    }
+  } catch (error) {
+    socket.user = null;
+  }
+  next();
+});
+
+const requireAdmin = (socket) => {
+  if (!socket.user || socket.user.role !== 'admin') {
+    socket.emit('error', 'Solo un administrador puede realizar esta accion');
+    return false;
+  }
+  return true;
+};
+
 io.on('connection', async (socket) => {
   console.log('Nuevo cliente conectado');
 
-  const products = await productManager.getProducts();
+  const products = await productService.getProducts();
   socket.emit('updateProducts', products);
 
   socket.on('addProduct', async (product) => {
+    if (!requireAdmin(socket)) return;
     try {
       // Check required types for price and stock
       if (typeof product.price === 'string') product.price = parseFloat(product.price);
       if (typeof product.stock === 'string') product.stock = parseInt(product.stock, 10);
       
-      await productManager.addProduct(product);
-      const updatedProducts = await productManager.getProducts();
+      await productService.addProduct(product);
+      const updatedProducts = await productService.getProducts();
       io.emit('updateProducts', updatedProducts);
     } catch (error) {
       console.error('Error al agregar producto:', error.message);
@@ -65,9 +93,10 @@ io.on('connection', async (socket) => {
   });
 
   socket.on('deleteProduct', async (id) => {
+    if (!requireAdmin(socket)) return;
     try {
-      await productManager.deleteProduct(id);
-      const updatedProducts = await productManager.getProducts();
+      await productService.deleteProduct(id);
+      const updatedProducts = await productService.getProducts();
       io.emit('updateProducts', updatedProducts);
     } catch (error) {
       console.error('Error al eliminar producto:', error.message);
