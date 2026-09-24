@@ -1,7 +1,7 @@
 {
-  "name": "entrega1-backend-2",
+  "name": "entregafinal-backend-2",
   "version": "1.0.0",
-  "description": "Servidor ecommerce con CRUD de usuarios, carritos, productos y autenticación JWT con Passport (Backend II - Entrega 1)",
+  "description": "Servidor ecommerce con CRUD de usuarios, carritos, productos y autenticación JWT con Passport (Backend II - Entrega Final)",
   "main": "src/app.js",
   "type": "commonjs",
   "scripts": {

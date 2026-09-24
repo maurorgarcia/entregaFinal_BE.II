@@ -3,7 +3,7 @@ const path = require("path");
 const mongoose = require("mongoose");
 const Product = require("../src/models/Product");
 
-const mongoUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/entrega1_be2";
+const mongoUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/entregafinal_be2";
 
 async function seedProducts() {
   await mongoose.connect(mongoUri, {

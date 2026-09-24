@@ -1,4 +1,4 @@
-# Entrega 1 - Backend II: CRUD de Usuarios y Autenticación JWT
+# Entrega Final - Backend II: CRUD de Usuarios y Autenticación JWT
 
 Proyecto Backend desarrollado con **Node.js**, **Express**, **MongoDB**, **Mongoose**, **Passport.js** y **JWT**.
 
@@ -29,7 +29,7 @@ npm install
 
 ```env
 PORT=8080
-MONGODB_URI=mongodb://127.0.0.1:27017/entrega1_be2
+MONGODB_URI=mongodb://127.0.0.1:27017/entregafinal_be2
 JWT_SECRET=coder_secret_2024
 ```
 
